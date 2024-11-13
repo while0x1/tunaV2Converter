@@ -80,27 +80,31 @@ for n in scriptUtxos:
         rawPlutus = RawPlutusData.from_cbor(n.output.datum.cbor)
         lockedV1In = rawPlutus.data.value[1]
         
-#Redeemers
+
+
+
 tunaToConvert = 5000000000
+tunaToLock = lockedV1In + tunaToConvert
+#Redeemers
 spendRedeemer =  Redeemer(Spend(0))
 withdrawRedeemer = Redeemer(Lock(0,tunaToConvert))
-unlockDatum = SpendDatum(30512,tunaToConvert)
+unlockDatum = SpendDatum(30512,tunaToLock)
 mintRedeemer = Redeemer(Mint())   
 #tunaToConvert
-tunaToLock = lockedV1In + tunaToConvert
+
 v2Tokens =  MultiAsset.from_primitive({bytes.fromhex(v2Policy): {b'TUNA': tunaToConvert}})
 v1TokensOut = MultiAsset.from_primitive({bytes.fromhex(v1Policy): {b'TUNA': tunaToLock}})
 minVal = min_lovelace_post_alonzo(TransactionOutput(address, Value(1000000, v2Tokens), datum=unlockDatum),chain_context)            
 #Builder
 builder = TransactionBuilder(chain_context)
 builder.add_input_address(address)
-builder.reference_inputs.add(refUtxos[0])
-builder.reference_inputs.add(refUtxos[1])
 #withdraw
 withdrawalAddress = Address.from_primitive('stake17ye5g0txzw8evz0gddc5lad6x5rs9ttaferkun96gr9wd9sw7yvne')
 builder.withdrawals = Withdrawals({bytes(withdrawalAddress):0})
 builder.add_withdrawal_script(refUtxos[0],withdrawRedeemer)
-builder.add_output(TransactionOutput(address,Value(minVal,v2Tokens)))
+#builder.add_output(TransactionOutput(address,Value(minVal,v2Tokens)))
+builder.reference_inputs.add(refScriptUtxos[0])
+builder.reference_inputs.add(refScriptUtxos[1])
 #spendValidator
 builder.add_script_input(lockUtxo, script=refUtxos[0], redeemer=spendRedeemer)
 builder.add_output(TransactionOutput(forkValidatorAddress,Value(minVal,v1TokensOut), datum=unlockDatum))
