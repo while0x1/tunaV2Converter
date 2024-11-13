@@ -1,4 +1,4 @@
-from opshin.prelude import *
+from dataclasses import dataclass
 from pycardano import *
 from staticVars import *
 
@@ -8,16 +8,13 @@ class Lock(PlutusData):
     CONSTR_ID = 1
     lockOutputIndex: int
     convertAmount: int
-#MINT REDEEMER
 @dataclass()
 class Mint(PlutusData):
     CONSTR_ID = 2
-#SPEND REDEEMER
 @dataclass()
 class Spend(PlutusData):
     CONSTR_ID = 1
-    zero: int #just 0
-#SPEND#DATUM
+    zero: int
 @dataclass()
 class SpendDatum(PlutusData):
     CONSTR_ID = 0 
@@ -79,6 +76,7 @@ for n in scriptUtxos:
     if n.output.datum:
         rawPlutus = RawPlutusData.from_cbor(n.output.datum.cbor)
         lockedV1In = rawPlutus.data.value[1]
+        lockedMinVal = n.output.amount.coin
         
 
 
@@ -107,8 +105,10 @@ builder.reference_inputs.add(refScriptUtxos[0])
 builder.reference_inputs.add(refScriptUtxos[1])
 #spendValidator
 builder.add_script_input(lockUtxo, script=refUtxos[0], redeemer=spendRedeemer)
-builder.add_output(TransactionOutput(forkValidatorAddress,Value(minVal,v1TokensOut), datum=unlockDatum))
+builder.add_output(TransactionOutput(forkValidatorAddress,Value(lockedMinVal,MultiAsset.union(v1TokensOut,lockNFT)), datum=unlockDatum))
 #mint() or mint?
 builder.add_minting_script(refUtxos[1],mintRedeemer)
 builder.mint = v2Tokens
 signed_tx = builder.build_and_sign([payment_skey], address)
+chain_context.submit_tx(signed_tx.to_cbor())
+print(signed_tx.id)
