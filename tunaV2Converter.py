@@ -94,6 +94,8 @@ minVal = min_lovelace_post_alonzo(TransactionOutput(address, Value(1000000, v2To
 #Builder
 builder = TransactionBuilder(chain_context)
 builder.add_input_address(address)
+builder.reference_inputs.add(refUtxos[0])
+builder.reference_inputs.add(refUtxos[1])
 #withdraw
 withdrawalAddress = Address.from_primitive('stake17ye5g0txzw8evz0gddc5lad6x5rs9ttaferkun96gr9wd9sw7yvne')
 builder.withdrawals = Withdrawals({bytes(withdrawalAddress):0})
